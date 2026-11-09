@@ -1,77 +1,128 @@
 # Background Sync (WorkManager periodic work)
 
-**Question 5** - 24CS2021 Mobile Application Development using Android
+> **Question 5** - 24CS2021 Mobile Application Development using Android
+>
+> Periodic WorkManager task (15 min) that logs the time, with Start/Cancel buttons and live status.
 
-Periodic WorkManager task (15 min) that logs the time, with Start/Cancel buttons and live status.
-
-- Folder: `q05-workmanager-sync`  |  Application id / package: `com.example.labapp.q05`
-- Kotlin + Jetpack Compose (Material 3), Android Gradle Plugin 8.7.3, Kotlin 2.1.0, minSdk 24, compileSdk 35
+| | |
+|---|---|
+| Folder | `q05-workmanager-sync` |
+| Package / application id | `com.example.labapp.q05` |
+| Extra needed | Nothing extra (watch Logcat) |
+| Tests | No tests in this project |
+| Built with | Kotlin, Jetpack Compose (Material 3), AGP 8.7.3, Kotlin 2.1.0, minSdk 24 |
 
 ---
 
-## Run this project on a new computer (complete steps)
+## Quick start (about 5 minutes)
 
-### 0. One-time installs (skip what you already have)
+> Already have **Git** and **Android Studio**? Do the steps below.
+> First time on this computer? Open [First-time setup](#first-time-setup-on-a-new-computer) first (one time only).
 
-| Tool | Where to get it |
-|------|-----------------|
-| **Git** | <https://git-scm.com/downloads> |
-| **Android Studio** (latest stable; includes the JDK) | <https://developer.android.com/studio> |
+1. **Clone** the repo (it is private, so sign in to GitHub when asked):
+   ```bash
+   git clone https://github.com/Joseph-VJ/MAD-Lab-Android-Projects.git
+   ```
+2. **Open this project only:** Android Studio > **File > Open** > choose `MAD-Lab-Android-Projects/q05-workmanager-sync` > **OK** > **Trust Project**.
+   (Do not open the repo root - each project is separate.)
+3. **Wait** for Gradle to finish (status bar at the bottom; the first sync downloads everything and needs internet).
+4. **Run:** choose an emulator or your phone in the top toolbar and press the green **Run** button. Done.
 
-Open Android Studio once and finish its first-run wizard (it installs the Android SDK). Then install SDK Platform 35:
-**More Actions (or the gear icon) > SDK Manager > SDK Platforms > tick "Android 15.0 (API 35)" > Apply**.
-Details and troubleshooting for the whole repo: see the [root README](../README.md).
+---
 
-### 1. Clone the repository
+## What you will see
 
-The repository is private, so sign in to GitHub first: either run `gh auth login` (GitHub CLI) or use
-Git Credential Manager (the browser sign-in window opens automatically on the first clone).
-
-```bash
-git clone https://github.com/Joseph-VJ/MAD-Lab-Android-Projects.git
+```text
++----------------------+       +----------------------+
+| Status: Not started  |  -->  | Status: ENQUEUED     |   (then RUNNING, then ENQUEUED again)
+| [ Start Sync  ]      |       | [ Start Sync  ]      |
+| [ Cancel Sync ]      |       | [ Cancel Sync ]      |
++----------------------+       +----------------------+
+Logcat (filter "SyncWorker"):   D/SyncWorker: Synced at Mon Nov 09 10:15:00 ...
 ```
 
-Android Studio alternative: **File > New > Project from Version Control**, paste the URL above, pick a folder, and
-sign in to GitHub when asked. If it then opens the repo root, do step 2 anyway.
-
-### 2. Open ONLY this project's folder
-
-In Android Studio: **File > Open** > browse to `MAD-Lab-Android-Projects/q05-workmanager-sync` > **OK**
-(choose **Trust Project** if asked). Do **not** open the repository root; every project is a separate Gradle project.
-
-### 3. Let Gradle sync finish
-
-The first sync downloads Gradle 8.11.1, the plugins and the libraries automatically, so it needs internet and can take
-a few minutes. Wait until the bottom status bar shows no progress and the **Build** tab says *BUILD SUCCESSFUL*.
-Android Studio may offer an *Android Gradle Plugin Upgrade Assistant*: click **Remind me later / ignore**; the project
-works as it is.
-
-### 4. Run the app
-
-1. Pick a device in the toolbar dropdown:
-   - **Emulator:** **Tools > Device Manager > Create Device** > Pixel (any) > a system image (API 34 or newer) > Finish, then press its play button; or
-   - **Real phone:** enable *Developer options* and *USB debugging*, connect by USB, and accept the prompt on the phone.
-2. Press the green **Run** button (Shift+F10). The app installs and opens.
-
-Command line instead (from inside this folder; use `gradlew.bat` on Windows). A device or emulator must be running:
-
-```bash
-./gradlew installDebug
-```
-
-## How to use the app
+### Try it yourself
 
 1. Run the app and tap **Start Sync**: Status shows ENQUEUED (briefly RUNNING).
 2. Open Logcat and filter by `SyncWorker`: you see `Synced at ...` now and then roughly every 15 minutes.
 3. Tap **Cancel Sync**: Status changes to CANCELLED. (Keep the app installed for the periodic log lines.)
 
-## If something goes wrong
+---
+
+## How it works
+
+- **Worker** - `SyncWorker : Worker` overrides `doWork()`, which writes the log line `Synced at <time>` and returns `Result.success()`.
+- **Periodic work** - `PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)`; 15 minutes is the smallest interval Android allows.
+- **Unique work** - `enqueueUniquePeriodicWork("sync", KEEP, ...)` makes sure only one sync job exists even if you tap Start twice.
+- **Status** - `getWorkInfosForUniqueWorkFlow("sync")` is collected as Compose state, so the screen shows ENQUEUED / RUNNING / CANCELLED live.
+- **Cancel** - `cancelUniqueWork("sync")` stops it (status becomes CANCELLED).
+- To see the log: Android Studio > **Logcat** (bottom) > type `SyncWorker` in the filter box.
+
+### Files in this project
+
+| File (click to open) | What it is |
+|------|-----------|
+| [`MainActivity.kt`](app/src/main/java/com/example/labapp/MainActivity.kt) | The app screen(s) |
+
+---
+
+## Build it yourself from scratch (for your lab record)
+
+<details>
+<summary><b>Click to open - step by step</b></summary>
+
+Use this if you must create the project by hand in Android Studio instead of opening the ready-made one.
+
+1. In Android Studio: **File > New > New Project > Empty Activity** (the Compose one). Set **Name** to anything, **Package name** to `com.example.labapp`, **Minimum SDK** to API 24, then **Finish** and wait for Gradle.
+2. Open `app/src/main/java/com/example/labapp/MainActivity.kt`, select all, delete, and paste the code from [`MainActivity.kt`](app/src/main/java/com/example/labapp/MainActivity.kt). Keep the first line `package com.example.labapp`.
+3. Open `app/build.gradle.kts` (Module :app) and add the lines below, then click **Sync Now**.
+
+   Inside the existing `dependencies { }` block add:
+
+   ```kotlin
+   implementation("androidx.work:work-runtime-ktx:2.10.0")
+   ```
+
+4. Pick an emulator or phone and press the green **Run** button.
+
+</details>
+
+---
+
+## First-time setup on a new computer
+
+<details>
+<summary><b>Click to open - install everything (one time)</b></summary>
+
+| # | What | How |
+|---|------|-----|
+| 1 | **Git** | Download from <https://git-scm.com/downloads> and install with the default options. |
+| 2 | **Android Studio** (latest stable) | Download from <https://developer.android.com/studio>, install, open it, and finish the *first-run wizard* (it installs the Android SDK). The JDK is included. |
+| 3 | **Android 15 (API 35) SDK** | Android Studio > **More Actions > SDK Manager > SDK Platforms** > tick **Android 15.0 (API 35)** > **Apply**. |
+| 4 | **GitHub sign-in** (repo is private) | Run `gh auth login` (GitHub CLI), or just sign in when the browser window opens on your first `git clone`. |
+| 5 | **A device to run on** | **Emulator:** Android Studio > **Tools > Device Manager > Create Device** > Pixel > system image API 34 or newer > Finish. **Phone:** Settings > About phone > tap *Build number* 7 times > Developer options > turn on *USB debugging*, connect by USB and tap *Allow*. |
+
+Prefer the command line? From inside this folder (device running; use `gradlew.bat` on Windows): `./gradlew installDebug`
+
+</details>
+
+---
+
+## Troubleshooting
+
+<details>
+<summary><b>Something went wrong? Click here</b></summary>
 
 | Problem | Fix |
 |---------|-----|
-| `SDK location not found` | Open **File > Settings > Languages & Frameworks > Android SDK** and note the path, or just let Android Studio create `local.properties` (it does so automatically when you open the folder). |
-| `Failed to find Build Tools` / platform 35 missing | **SDK Manager > SDK Platforms > Android 15.0 (API 35) > Apply**. |
-| Gradle sync fails with `Unsupported class file major version` or a JDK error | **File > Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle JDK** and select the bundled *jbr-17* (or newer) JDK. |
-| Sync fails to download anything | Check your internet or proxy, then **File > Sync Project with Gradle Files**. |
-| Emulator will not start | Enable virtualization in the BIOS; on Windows turn on *Windows Hypervisor Platform*; or test on a real phone. |
-| `Permission denied` for `./gradlew` on Linux/macOS | `chmod +x gradlew` |
+| `SDK location not found` | Android Studio creates `local.properties` by itself when you open the project folder. For command-line builds set `ANDROID_HOME`, or create `local.properties` with `sdk.dir=C:/Users/YOU/AppData/Local/Android/Sdk`. |
+| `Failed to find Build Tools` or platform 35 missing | SDK Manager > SDK Platforms > Android 15.0 (API 35) > Apply. |
+| JDK / `Unsupported class file major version` | **File > Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle JDK** > pick the bundled *jbr-17* (or newer). |
+| Sync cannot download anything | Check internet/proxy, then **File > Sync Project with Gradle Files**. |
+| "Android Gradle Plugin Upgrade Assistant" popup | Ignore it (**Remind me later**). The project works as it is. |
+| Emulator will not start | Turn on virtualization in the BIOS; on Windows enable *Windows Hypervisor Platform*; or use a real phone. |
+| `Permission denied: ./gradlew` (Linux/macOS) | `chmod +x gradlew` |
+| Clone asks for a password and fails | Passwords no longer work on GitHub. Run `gh auth login` or sign in through the browser prompt. |
+| Opened the wrong folder / "not a Gradle project" | Close it and open the project folder `q05-workmanager-sync` itself, not the parent. |
+
+</details>
